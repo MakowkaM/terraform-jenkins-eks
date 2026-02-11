@@ -1,39 +1,40 @@
 #!/bin/bash
 set -e
 
-### SYSTEM UPDATE ###
-sudo yum update -y
+# Poczekaj aż yum będzie dostępny
+while fuser /var/lib/rpm/.rpm.lock >/dev/null 2>&1; do
+    echo "Czekam aż yum będzie wolny..."
+    sleep 5
+done
 
-### JAVA 17 (ZALECANE / WYMAGANE PRZEZ JENKINS) ###
-sudo amazon-linux-extras enable corretto17
-sudo yum install -y java-17-amazon-corretto
+# SYSTEM UPDATE
+yum update -y
 
-### JENKINS (LATEST STABLE) ###
-sudo wget -O /etc/yum.repos.d/jenkins.repo \
-  https://pkg.jenkins.io/redhat-stable/jenkins.repo
+# JAVA 17
+yum install -y java-17-amazon-corretto
 
-sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+# JENKINS (latest stable)
+wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+yum install -y jenkins
+systemctl enable jenkins
+systemctl start jenkins
 
-sudo yum install -y jenkins
-sudo systemctl enable jenkins
-sudo systemctl start jenkins
+# GIT
+yum install -y git
 
-### GIT ###
-sudo yum install -y git
+# TERRAFORM
+yum install -y yum-utils
+yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+yum install -y terraform
 
-### TERRAFORM (LATEST) ###
-sudo yum install -y yum-utils
-sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-sudo yum install -y terraform
-
-### KUBECTL (LATEST STABLE) ###
-KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-
+# KUBECTL
+KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt) 
 curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
 chmod +x kubectl
-sudo mv kubectl /usr/local/bin/kubectl
+mv kubectl /usr/local/bin/kubectl
 
-### VERIFY ###
+# WERYFIKACJA
 java -version
 git --version
 terraform -version

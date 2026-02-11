@@ -71,6 +71,8 @@ module "ec2_instance" {
 
   name = "Jenkins"
 
+   ami = data.aws_ami.example.id
+
   create_security_group = false
 
 
